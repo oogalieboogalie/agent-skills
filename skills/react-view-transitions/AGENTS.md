@@ -334,6 +334,8 @@ Wrap each item (not a wrapper div) in `<ViewTransition>` with a stable `key`:
 
 Triggering the reorder inside `startTransition` will smoothly animate each item to its new position. Avoid wrapper `<div>`s between the list and `<ViewTransition>` — they block the reorder animation.
 
+**How it works:** `startTransition` doesn't need async work to animate. The View Transition API captures a "before" snapshot of the DOM, then React applies the state update, and the API captures an "after" snapshot. As long as items change position between snapshots, the animation runs — even for purely synchronous local state changes like sorting.
+
 ### Animate Suspense Fallback to Content
 
 Wrap `<Suspense>` in `<ViewTransition>` to cross-fade from fallback to loaded content:
@@ -433,6 +435,37 @@ import { Activity, ViewTransition, startTransition } from 'react';
   </ViewTransition>
 </Activity>
 ```
+
+### Exclude Elements from a Transition with `useOptimistic`
+
+When a `startTransition` changes both a control (e.g. a button label) and content (e.g. list order), use `useOptimistic` for the control. The optimistic value updates before React's transition snapshot, so it won't animate. The committed state drives the content, which changes within the transition and animates:
+
+```tsx
+const [sort, setSort] = useState('newest');
+const [optimisticSort, setOptimisticSort] = useOptimistic(sort);
+
+function cycleSort() {
+  const nextSort = getNextSort(optimisticSort);
+  startTransition(() => {
+    setOptimisticSort(nextSort);  // updates before snapshot — no animation
+    setSort(nextSort);            // changes within transition — animates
+  });
+}
+
+// Button uses optimisticSort (instant, excluded from animation)
+<button>Sort: {LABELS[optimisticSort]}</button>
+
+// List uses committed sort (changes between snapshots, animates)
+{items.sort(comparators[sort]).map(item => (
+  <ViewTransition key={item.id}>
+    <ItemCard item={item} />
+  </ViewTransition>
+))}
+```
+
+`useOptimistic` values resolve before the transition snapshot. Any DOM driven by optimistic state is already in its final form when the "before" snapshot is taken, so it doesn't participate in the ViewTransition. Only DOM driven by committed state (via `setState`) changes between snapshots and animates.
+
+**Note:** Always add `prefers-reduced-motion` handling to your global CSS — see the Accessibility section below.
 
 ---
 
@@ -719,6 +752,9 @@ Or disable specific animations conditionally in JavaScript events by checking th
 
 **Competing / double animations on navigation:**
 - Multiple `<ViewTransition>` components at different tree levels (layout + page + items) all fire simultaneously inside a single `document.startViewTransition`. If a layout-level VT cross-fades the whole page while a page-level VT slides up content, both run at once and fight for attention. Fix: use `default="none"` on the layout-level VT, or remove it entirely if pages manage their own animations. See "How Multiple ViewTransitions Interact" above.
+
+**List reorder not animating with `useOptimistic`:**
+- If the optimistic value drives the list sort order, items are already in their final positions before the transition snapshot — there's nothing to animate. Use the optimistic value only for controls (labels, icons) and the committed state (`useState`) for the list sort order.
 
 **TypeScript error: "Property 'default' is missing in type 'ViewTransitionClassPerType'":**
 - When passing an object to `enter`/`exit`/`update`/`share`, TypeScript requires a `default` key in the object. This applies even if the component-level `default` prop is set. Always include `default: 'none'` (or `'auto'`) in type-keyed objects.
