@@ -166,7 +166,7 @@ Same `name` on two VTs — one unmounting, one mounting — creates a shared ele
 ```
 
 - Only one VT with a given `name` can be mounted at a time — use unique names (`photo-${id}`).
-- `share` takes precedence over `enter`/`exit`.
+- `share` takes precedence over `enter`/`exit`. Think through each navigation path: when no matching pair forms (e.g., the target page doesn't have the same name), `enter`/`exit` fires instead. Consider whether the element needs a fallback animation for those paths.
 - Never use a fade-out exit on pages with shared morphs — use a directional slide instead.
 
 ---
