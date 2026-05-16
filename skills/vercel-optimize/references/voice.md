@@ -35,6 +35,8 @@ Use customer-facing replacements:
 | `quality score` | `review result` |
 | `inv` | `function invocations` or `requests`, based on the metric |
 | `p95` | `95th percentile` |
+| `perf` | `performance` |
+| `CWV` | `Core Web Vitals` |
 
 ## Product names
 
@@ -42,7 +44,7 @@ Use these spellings:
 
 | Right | Wrong |
 |---|---|
-| `Observability Plus` | `OPlus`, `Oplus`, `obs+` |
+| `Observability Plus` | `OPlus`, `Oplus`, `O11y Plus`, `o11y+`, `obs+` |
 | `Vercel Functions` | `serverless functions` when referring to Vercel's product |
 | `fluid compute` mid-sentence | `Fluid Compute` mid-sentence |
 | `BotID` | `Bot ID`, `botID` |

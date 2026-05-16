@@ -13,7 +13,7 @@ const ROOT = join(HERE, '..', '..', '..', 'skills', 'vercel-optimize');
 
 // "Observability Plus" shorthand must not appear in prose. Code identifiers
 // like OPLUS_REQUIRED / no_oplus_probe are fine — word-boundary regex skips them.
-const FORBIDDEN_RE = /\b(OPlus|Oplus|O-Plus)\b/;
+const FORBIDDEN_RE = /\b(OPlus|Oplus|O-Plus|O11y(?:\s+Plus)?)\b|obs\+/;
 
 async function readAllMarkdown(dir) {
   const out = [];
@@ -29,7 +29,7 @@ async function readAllMarkdown(dir) {
   return out;
 }
 
-test('voice drift: no markdown file uses "OPlus" / "Oplus" / "O-Plus" shorthand', async () => {
+test('voice drift: no markdown file uses Observability Plus shorthand', async () => {
   const files = await readAllMarkdown(ROOT);
   assert.ok(files.length > 0, 'sanity check — found markdown files');
   for (const path of files) {
@@ -37,6 +37,18 @@ test('voice drift: no markdown file uses "OPlus" / "Oplus" / "O-Plus" shorthand'
     const match = content.match(FORBIDDEN_RE);
     assert.ok(!match, `${path.replace(ROOT, '.')} contains "${match?.[0]}" — use "Observability Plus" instead`);
   }
+});
+
+test('voice drift: Observability Plus blocker question uses exact plain copy', async () => {
+  const content = await readFile(join(ROOT, 'references', 'observability-plus.md'), 'utf-8');
+  assert.match(content, /"header": "Observability Plus"/);
+  assert.match(
+    content,
+    /"question": "Enable Observability Plus and re-run, or continue with a limited scanner-only audit\?"/
+  );
+  assert.match(content, /"label": "Enable and re-run"/);
+  assert.match(content, /"label": "Run scanner-only"/);
+  assert.doesNotMatch(content, /\b(O11y|OPlus|Oplus|O-Plus|perf|CWV)\b|obs\+/);
 });
 
 test('voice drift: generated brief does not contain "OPlus" shorthand', () => {
@@ -63,7 +75,7 @@ test('voice drift: generated brief does not contain "OPlus" shorthand', () => {
     frameworkPlaybookBody: null,
     generatedAt: null,
   });
-  assert.ok(!FORBIDDEN_RE.test(md), 'investigation brief leaks "OPlus" shorthand into sub-agent prompt');
+  assert.ok(!FORBIDDEN_RE.test(md), 'investigation brief leaks Observability Plus shorthand into sub-agent prompt');
 });
 
 test('voice drift: rendered report does not contain "OPlus" shorthand', () => {
@@ -80,5 +92,5 @@ test('voice drift: rendered report does not contain "OPlus" shorthand', () => {
     },
     opts: { projectName: 'test', generatedAt: null },
   });
-  assert.ok(!FORBIDDEN_RE.test(md), 'rendered report leaks "OPlus" shorthand');
+  assert.ok(!FORBIDDEN_RE.test(md), 'rendered report leaks Observability Plus shorthand');
 });

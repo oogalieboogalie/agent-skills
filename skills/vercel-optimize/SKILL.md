@@ -19,12 +19,12 @@ This skill is built from field-tested Vercel optimization patterns. The architec
 - "Audit my performance"
 - "Why is /api/products slow?"
 - "Find caching opportunities"
-- The user shares a Vercel deployment URL or mentions Vercel cost/perf in passing
+- The user shares a Vercel deployment URL or mentions Vercel cost/performance in passing
 
 ## When NOT to use this skill
 
 - Projects not deployed on Vercel (this skill depends on Vercel observability + billing data)
-- General code review or framework migration (use a different skill — this one is scoped to cost+perf+reliability)
+- General code review or framework migration (use a different skill — this one is scoped to cost, performance, and reliability)
 - Greenfield projects with no deployment yet (no signals to gate on; come back after first deploy + meaningful traffic)
 - Architectural rewrites (this skill optimizes what exists; it doesn't redesign)
 
@@ -429,7 +429,7 @@ Draft recommendations, then mechanically verify the claims they make.
 
 ### 3.1 Merit-prune findings
 
-For each finding, score `actionable + evidenced + impactful` (1-5 each) using the o11y signal already attached. Cap drop ratio at 30% (don't gut the report). High-o11y-signal findings stay; cold-path findings deprioritize naturally.
+For each finding, score `actionable + evidenced + impactful` (1-5 each) using the observed signal already attached. Cap drop ratio at 30% (don't gut the report). High-signal findings stay; cold-path findings deprioritize naturally.
 
 ### 3.2 Select playbook
 
@@ -518,7 +518,7 @@ Use `--debug-out debug.json` when developing the skill and you need internal ver
 - Not investigated in this run — held-back candidates grouped by reason (the trust mechanism)
 - Strengths — derived from the signals (healthy cache hit rate, low cold starts, low 5xx)
 - Configuration notes — project settings that affect interpretation but are not proof of optimization impact
-- Data gaps — derived from the signals (no Observability Plus, no CWV, no ISR, no images, no middleware)
+- Data gaps — derived from the signals (no Observability Plus, no Core Web Vitals data, no ISR, no images, no middleware)
 
 ### 4.1 Manual rules the renderer encodes
 
@@ -615,7 +615,7 @@ Never render precise dollar savings. Always anchor cost framing on "at current t
 6. **No invented doc URLs.** The LLM may only cite URLs from `references/docs-library.json`. Out-of-library URLs → `unknown-citation` strips them.
 7. **No version-mismatched citations.** `'use cache'` citation on a Next 13 project → `version-mismatch` strips it. Closes the "agent recommends features that don't exist in your version" failure mode.
 8. **Verifier mechanical.** Claim verification uses grep/ast-grep/filesystem reads. No LLM "judgment" verification.
-9. **Performance citations cite observed data.** Performance recs MUST cite the actual o11y datum from `signals.json` (e.g., `o11y:functionRoutes[/api/products].p95Ms=850`). Estimated improvements are ranges grounded in the observed baseline.
+9. **Performance citations cite observed data.** Performance recs MUST cite the actual metric datum from `signals.json` (e.g., `signals.metrics.fnDurationP95ByRoute[/api/products].p95Ms=850`). Estimated improvements are ranges grounded in the observed baseline.
 
 ## Failure modes (verbatim user-facing copy)
 

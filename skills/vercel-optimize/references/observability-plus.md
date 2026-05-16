@@ -28,7 +28,7 @@ Render this template first, then wait for the user's choice. Replace only `<deta
 
 <detail>
 
-This skill ranks recommendations by per-route metrics: 95th percentile latency, cache hit rate, error rate, cold-start rate, and ISR reads/writes. Without those metrics, I can run scanner-only mode: useful for static code issues, but not enough for a ranked cost and performance audit.
+This skill ranks recommendations by per-route metrics: 95th percentile latency, cache hit rate, error rate, cold-start rate, and Incremental Static Regeneration reads and writes. Without those metrics, I can run scanner-only mode: useful for static code issues, but not enough for a ranked cost and performance audit.
 
 Pricing can change, so check the current Observability Plus pricing before enabling it: https://vercel.com/docs/observability/observability-plus
 
@@ -36,6 +36,27 @@ Choose one:
 1. Enable Observability Plus, then re-run for the full audit.
 2. Continue in scanner-only mode for a limited audit.
 ```
+
+If the host supports a structured question tool, use this exact customer-facing copy. Do not rewrite it.
+
+```json
+{
+  "question": "Enable Observability Plus and re-run, or continue with a limited scanner-only audit?",
+  "header": "Observability Plus",
+  "options": [
+    {
+      "label": "Enable and re-run",
+      "description": "Run the full audit with per-route latency, cache, error, cold-start, and Incremental Static Regeneration metrics."
+    },
+    {
+      "label": "Run scanner-only",
+      "description": "Limited audit. Checks traffic-independent code patterns and will not rank the hottest routes or prove cost impact."
+    }
+  ]
+}
+```
+
+Use the full product name in this question. Do not abbreviate product names or metrics in customer-facing blocker copy.
 
 ## Blocker Copy
 

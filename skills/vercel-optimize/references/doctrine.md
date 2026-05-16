@@ -35,7 +35,7 @@ When the gate emits a candidate with `files: ['src/app/api/products/route.ts']`,
 
 If you find yourself wanting to grep the whole codebase, stop and re-read the current candidate's `question` field. If the question doesn't constrain the search, the candidate is malformed — log it as `gated` and skip. Do NOT compensate with a wider search.
 
-**Why this matters:** the agent's job is to verify and explain the metric anomaly the gate found, not to do a general code review. Wandering investigations produce drift, hallucination, and recommendations untied to the cost/perf data.
+**Why this matters:** the agent's job is to verify and explain the metric anomaly the gate found, not to do a general code review. Wandering investigations produce drift, hallucination, and recommendations untied to the cost and performance data.
 
 ### Scanner findings (the supplementary signal)
 
@@ -97,7 +97,7 @@ A good run produces:
 
 The skill is bounded to runtime cost and performance optimization on Vercel-hosted projects. The following are explicit non-goals; if signals or scanner findings surface in these areas, route them out:
 
-- **Deployment artifact size** in isolation. Bundle size matters only when it shows up as runtime cost (cold start, FDT) or perf (LCP, INP). If the only effect is "the .next directory is large," it's not in scope.
+- **Deployment artifact size** in isolation. Bundle size matters only when it shows up as runtime cost (cold start, FDT) or performance (LCP, INP). If the only effect is "the .next directory is large," it's not in scope.
 - **Build-time issues without runtime impact.** Slow builds, build-cache misses, monorepo build fan-out — these only enter scope when they show up as Build Minutes billing pressure (then they go through the `build-minutes-fanout` gate). A 6-minute build that completes successfully and ships a small artifact is not a target.
 - **Security advisories and credential rotation.** RCE in `next-mdx-remote`, leaked env vars, OIDC vs explicit-key auth hygiene — refer to a security skill, not this one. Exception: when a security setting is also a documented cost lever (BotID = bot traffic = edge cost), it enters via the `platform_bot_protection` gate.
 - **Commercial / billing-process trivia.** Discount sliders, seat reconciliation, contract renewal mechanics. The skill can quantify which SKU is expensive; it does not negotiate.

@@ -92,7 +92,7 @@ The `what` field opens with the verb + the change, not the framing. Compare:
 The `why` must reference a verified finding from `verifiedFindings.json`:
 
 - ❌ "The route is uncached" (could apply anywhere)
-- ✅ "src/app/api/products/route.ts:22 returns Response without Cache-Control; o11y shows 0% cache hit on 1.2M invocations/mo"
+- ✅ "src/app/api/products/route.ts:22 returns Response without Cache-Control; observability shows 0% cache hit on 1.2M invocations/mo"
 
 ### No $ literals in customer fields
 
@@ -174,7 +174,7 @@ Each rec is scored on four axes, 0-1 each. Average → grade:
 |---|---|---|
 | Specificity | Concrete files, line numbers, code snippets | Triple-backtick code fence OR inline code ≥10 chars + verified file path |
 | Actionability | Clear "do this then that" steps | Numbered steps; verbs present in each step; no "consider"/"might" |
-| Grounding | Claims trace to findings or D0/o11y data | `sourceIndex` matches a finding OR rec has affectedFiles + code fences (presumed evidence) |
+| Grounding | Claims trace to findings or metric data | `sourceIndex` matches a finding OR rec has affectedFiles + code fences (presumed evidence) |
 | Evidence | Numeric, observed claims | Count words (errors, queries, invocations) + units (% / ms / s / K / M) |
 
 Grade thresholds:
