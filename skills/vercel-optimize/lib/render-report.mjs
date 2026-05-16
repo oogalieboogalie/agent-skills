@@ -282,7 +282,7 @@ function renderCoverageLine(candidates, recommendations, signals, opts = {}) {
   const total = launched.length + skippedByBudget.length;
   if (total === 0) return null;
   const parts = [];
-  parts.push(`**${total}** metric signal${total === 1 ? '' : 's'} met the investigation threshold`);
+  parts.push(`Vercel metrics flagged **${total}** potential issue${total === 1 ? '' : 's'} to check`);
   parts.push(`${launched.length} investigated`);
   if (skippedByBudget.length > 0) {
     parts.push(`${skippedByBudget.length} left for a larger run — re-run with \`--max-candidates all\` to see the rest`);

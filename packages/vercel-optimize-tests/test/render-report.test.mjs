@@ -419,7 +419,7 @@ test('buildFinalReportMessage: extracts concise public message from rendered mar
     signals: baseSignals,
   });
   assert.match(message.body, /^Report saved: \/tmp\/report\.md/);
-  assert.match(message.body, /\*\*Coverage\*\*: \*\*1\*\* metric signal met the investigation threshold/);
+  assert.match(message.body, /\*\*Coverage\*\*: Vercel metrics flagged \*\*1\*\* potential issue to check/);
   assert.match(message.body, /Ready recommendations:/);
   assert.match(message.body, /1\. Parallelize three sequential fetch waves in \/dashboard\/\[sessionId\]/);
   assert.match(message.body, /Impact: Reduce \/dashboard\/\[sessionId\] 95th percentile from 1066ms toward ~400-600ms/);
@@ -693,7 +693,7 @@ test('renderReport: Coverage line shows "investigated all N" when no skipping', 
     signals: baseSignals,
     opts: { projectName: 'x' },
   });
-  assert.match(md, /\*\*Coverage\*\*: \*\*2\*\* metric signals met the investigation threshold/);
+  assert.match(md, /\*\*Coverage\*\*: Vercel metrics flagged \*\*2\*\* potential issues to check/);
   assert.match(md, /2 investigated/);
   assert.match(md, /1 recommendation ready/);
 });
@@ -712,7 +712,7 @@ test('renderReport: Coverage line shows N of M when budget bound', () => {
     signals: baseSignals,
     opts: { projectName: 'x' },
   });
-  assert.match(md, /\*\*Coverage\*\*: \*\*4\*\* metric signals met the investigation threshold/);
+  assert.match(md, /\*\*Coverage\*\*: Vercel metrics flagged \*\*4\*\* potential issues to check/);
   assert.match(md, /2 investigated/);
   assert.match(md, /2 left for a larger run/);
   assert.match(md, /--max-candidates all/);
@@ -750,7 +750,7 @@ test('renderReport: Coverage line includes no-change and held-back verification 
     signals: baseSignals,
     opts: { projectName: 'x', heldBackCount: 1 },
   });
-  assert.match(md, /\*\*3\*\* metric signals met the investigation threshold/);
+  assert.match(md, /Vercel metrics flagged \*\*3\*\* potential issues to check/);
   assert.match(md, /1 recommendation ready/);
   assert.match(md, /1 need more evidence/);
   assert.match(md, /1 investigated, no change recommended/);

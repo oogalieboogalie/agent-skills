@@ -223,9 +223,9 @@ Use `all` for a one-shot exhaustive audit (every gate-passing candidate gets inv
 
 For large runs, keep the manifest's `fanoutPlan` visible to the orchestrator. It groups briefs by failure family and primary source file so a host can label work clearly and avoid confusing duplicate-looking tasks. The skill still emits one brief per candidate unless the host implements family batching; the manifest is the contract for that batching.
 
-### 2.1.5 Budget checkpoint — ask the user when the default would skip work
+### 2.1.5 Audit scope choice — ask the user when the default would skip work
 
-Deep-dive is the most expensive step (one Vercel CLI round-trip per candidate). Before paying for it, check whether the default budget is the right one for this run:
+Deep-dive is the most expensive step (one Vercel CLI round-trip per candidate). Before paying for it, check whether the user wants a focused first pass or a broader audit:
 
 ```bash
 node scripts/budget-summary.mjs gate.json --format json
@@ -242,7 +242,7 @@ The script returns a structured object:
   "budgetSource": "default",
   "skipped": 15,
   "printContract": "Print chatPreview verbatim by copying exactChatMessage.body as a chat message before asking questionText. Do not summarize, truncate, reorder, shorten, or rewrite options.",
-  "chatPreview": "Budget checkpoint: 21 metric signals met the investigation threshold. Default investigates 6 candidates with the strongest observed signals while keeping coverage across issue types. 15 would be left for a larger run.\nThese are first-pass signals. Follow-up metrics can still remove mismatches before source investigation.\n\nInvestigating by default:\n  1. Slow route on /event - function invocations: 2,867,116; 95th percentile duration: 3010ms\n  ...\n\nSkipped by budget (all 15; next highest-priority candidates):\n  1. Slow route on /event/[code]/[location]/register - function invocations: 118,267; 95th percentile duration: 735ms\n  ...",
+  "chatPreview": "Vercel metrics found 21 potential issues worth checking. By default I'll inspect the 6 strongest now; 15 will stay in the report for a larger run.\nChoose a larger scope if you want broader coverage. More checks take longer and may still end with no code change recommended.\n\nChecking now:\n  1. Slow route on /event - function invocations: 2,867,116; 95th percentile duration: 3010ms\n  ...\n\nOnly checked if you expand this run (15):\n  1. Slow route on /event/[code]/[location]/register - function invocations: 118,267; 95th percentile duration: 735ms\n  ...",
   "exactChatMessage": {
     "body": "same string as chatPreview",
     "lineCount": 43,
@@ -251,26 +251,26 @@ The script returns a structured object:
   "printCheck": {
     "bodyField": "exactChatMessage.body",
     "requiredSkippedRows": 15,
-    "requiredSkippedHeading": "Skipped by budget (all 15; next highest-priority candidates):",
-    "instruction": "The budget message is valid only when every line from exactChatMessage.body is preserved exactly."
+    "requiredSkippedHeading": "Only checked if you expand this run (15):",
+    "instruction": "The audit-scope message is valid only when every line from exactChatMessage.body is preserved exactly."
   },
-  "questionText": "Keep the default 6, investigate all 21, or pick a specific number?",
+  "questionText": "How many potential issues should I check in this run?",
   "topInvestigating": [...],
   "topSkipped": [...],
   "options": [
-    { "label": "Keep default 6", "value": 6, "recommended": true, "description": "Investigates the strongest signals first while keeping coverage across issue types." },
-    { "label": "Investigate all 21", "value": "all", ... },
-    { "label": "Pick a specific N", "value": "custom", ... }
+    { "label": "Check 6 (default)", "value": 6, "recommended": true, "description": "Fastest first pass; checks the strongest cost and performance signals." },
+    { "label": "Check all 21", "value": "all", ... },
+    { "label": "Pick a number", "value": "custom", ... }
   ],
   "questionPayload": {
     "questions": [{
-      "question": "Keep the default 6, investigate all 21, or pick a specific number?",
-      "header": "Budget",
+      "question": "How many potential issues should I check in this run?",
+      "header": "Audit scope",
       "multiSelect": false,
       "options": [
-        { "label": "Keep default 6", "description": "Investigates the strongest signals first while keeping coverage across issue types." },
-        { "label": "Investigate all 21", "description": "Investigates every signal that met the threshold; follow-up metrics can still remove mismatches before source investigation." },
-        { "label": "Pick a specific N", "description": "Expand the next highest-priority signals without going to the full 21." }
+        { "label": "Check 6 (default)", "description": "Fastest first pass; checks the strongest cost and performance signals." },
+        { "label": "Check all 21", "description": "Most complete; takes longer because every flagged route is investigated." },
+        { "label": "Pick a number", "description": "Check more than 6 without running the full 21." }
       ]
     }]
   }

@@ -70,18 +70,18 @@ export function buildBudgetSummary(gate) {
 }
 
 function buildChatPreview({ shouldAsk, totalPassed, currentBudget, skipped, topInvestigating, topSkipped, reason }) {
-  if (!shouldAsk) return `Budget checkpoint: no question — ${reason}.`;
+  if (!shouldAsk) return `Audit scope: no question needed — ${reason}.`;
   const lines = [];
-  lines.push(`Budget checkpoint: ${totalPassed} metric signals met the investigation threshold. Default investigates ${currentBudget} candidates with the strongest observed signals while keeping coverage across issue types. ${skipped} would be left for a larger run.`);
-  lines.push(`These are first-pass signals. Follow-up metrics can still remove mismatches before source investigation.`);
+  lines.push(`Vercel metrics found ${totalPassed} potential issue${totalPassed === 1 ? '' : 's'} worth checking. By default I'll inspect the ${currentBudget} strongest now; ${skipped} will stay in the report for a larger run.`);
+  lines.push(`Choose a larger scope if you want broader coverage. More checks take longer and may still end with no code change recommended.`);
   if (topInvestigating.length > 0) {
     lines.push('');
-    lines.push(`Investigating by default${topInvestigating.length < currentBudget ? ` (${topInvestigating.length} shown)` : ''}:`);
+    lines.push(`Checking now${topInvestigating.length < currentBudget ? ` (${topInvestigating.length} shown)` : ''}:`);
     topInvestigating.forEach((c, i) => lines.push(`  ${i + 1}. ${formatCandidateLine(c)}`));
   }
   if (topSkipped.length > 0) {
     lines.push('');
-    lines.push(`Skipped by budget (all ${topSkipped.length}; next highest-priority candidates):`);
+    lines.push(`Only checked if you expand this run (${topSkipped.length}):`);
     topSkipped.forEach((c, i) => lines.push(`  ${i + 1}. ${formatCandidateLine(c)}`));
   }
   return lines.join('\n');
@@ -102,7 +102,7 @@ function buildPrintCheck({ exactChatMessage, skipped }) {
     requiredLineCount: exactChatMessage.lineCount,
     requiredSha256: exactChatMessage.sha256,
     requiredSkippedRows: skipped,
-    requiredSkippedHeading: `Skipped by budget (all ${skipped}; next highest-priority candidates):`,
+    requiredSkippedHeading: `Only checked if you expand this run (${skipped}):`,
     forbiddenSummaryPatterns: [
       '\\btop skipped\\b',
       '\\bmore (?:candidate|candidates|routes|entries|items|in gated list)\\b',
@@ -115,7 +115,7 @@ function buildPrintCheck({ exactChatMessage, skipped }) {
 
 function buildQuestionText({ shouldAsk, totalPassed, currentBudget }) {
   if (!shouldAsk) return '';
-  return `Keep the default ${currentBudget}, investigate all ${totalPassed}, or pick a specific number?`;
+  return `How many potential issues should I check in this run?`;
 }
 
 function buildOptions(currentCount, skippedCount) {
@@ -123,25 +123,25 @@ function buildOptions(currentCount, skippedCount) {
   const total = currentCount + skippedCount;
   return [
     {
-      label: `Keep default ${currentCount}`,
+      label: `Check ${currentCount} (default)`,
       value: currentCount,
       recommended: true,
-      description: 'Investigates the strongest signals first while keeping coverage across issue types.',
-      rationale: 'investigates the strongest signals first while keeping coverage across issue types',
+      description: 'Fastest first pass; checks the strongest cost and performance signals.',
+      rationale: 'fastest first pass; checks the strongest cost and performance signals',
     },
     {
-      label: `Investigate all ${total}`,
+      label: `Check all ${total}`,
       value: 'all',
       recommended: false,
-      description: 'Investigates every signal that met the threshold; follow-up metrics can still remove mismatches before source investigation.',
-      rationale: 'investigates every signal that met the threshold; follow-up metrics can still remove mismatches before source investigation',
+      description: 'Most complete; takes longer because every flagged route is investigated.',
+      rationale: 'most complete; takes longer because every flagged route is investigated',
     },
     {
-      label: 'Pick a specific N',
+      label: 'Pick a number',
       value: 'custom',
       recommended: false,
-      description: `Expand the next highest-priority signals without going to the full ${total}.`,
-      rationale: `expands the next highest-priority signals without going to the full ${total}`,
+      description: `Check more than ${currentCount} without running the full ${total}.`,
+      rationale: `checks more than ${currentCount} without running the full ${total}`,
     },
   ];
 }
@@ -150,7 +150,7 @@ function buildQuestionPayload(questionText, options) {
   return {
     questions: [{
       question: questionText,
-      header: 'Budget',
+      header: 'Audit scope',
       multiSelect: false,
       options: options.map((o) => ({
         label: o.label,
@@ -162,7 +162,7 @@ function buildQuestionPayload(questionText, options) {
 
 export function renderBudgetSummaryMarkdown(s) {
   const lines = [];
-  lines.push(`## Budget checkpoint`);
+  lines.push(`## Audit scope`);
   lines.push('');
   if (!s.shouldAsk) {
     lines.push(`_No question needed — ${s.reason}._`);

@@ -22,7 +22,7 @@ async function main() {
     summary.questionText = '';
     summary.questionPayload = null;
     summary.options = [];
-    summary.chatPreview = `Budget checkpoint: no question — ${summary.reason}.`;
+    summary.chatPreview = `Audit scope: no question needed — ${summary.reason}.`;
     summary.exactChatMessage = {
       body: summary.chatPreview,
       lineCount: summary.chatPreview.split('\n').length,

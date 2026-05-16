@@ -144,7 +144,7 @@ Candidates that were checked but did not produce a supported recommendation. Use
 
 | Candidate | Why no recommendation shipped |
 |---|---|
-| Slow route on /docs | Follow-up metrics were below threshold |
+| Slow route on /docs | Detailed metrics did not support a code change |
 
 ## Not investigated in this run
 

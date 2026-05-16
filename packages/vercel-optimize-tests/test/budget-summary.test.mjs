@@ -63,11 +63,11 @@ test('buildBudgetSummary: shouldAsk=true when default budget skipped candidates'
   );
   assert.equal(s.printCheck.bodyField, 'exactChatMessage.body');
   assert.equal(s.printCheck.requiredSkippedRows, 4);
-  assert.equal(s.printCheck.requiredSkippedHeading, 'Skipped by budget (all 4; next highest-priority candidates):');
+  assert.equal(s.printCheck.requiredSkippedHeading, 'Only checked if you expand this run (4):');
   assert.match(s.printCheck.forbiddenSummaryPatterns.join('\n'), /more/);
   assert.equal(s.questionPayload.questions[0].question, s.questionText);
-  assert.equal(s.questionPayload.questions[0].header, 'Budget');
-  assert.equal(s.questionPayload.questions[0].options[0].label, 'Keep default 6');
+  assert.equal(s.questionPayload.questions[0].header, 'Audit scope');
+  assert.equal(s.questionPayload.questions[0].options[0].label, 'Check 6 (default)');
   assert.ok(s.options.find((o) => o.recommended)?.label.includes('default'));
 });
 
@@ -101,9 +101,9 @@ test('renderBudgetSummaryMarkdown: lists investigating + skipped + options', () 
     ],
   }));
   const md = renderBudgetSummaryMarkdown(s);
-  assert.match(md, /Investigating by default/);
-  assert.match(md, /first-pass signals/);
-  assert.match(md, /Skipped by budget \(all 1; next highest-priority candidates\)/);
+  assert.match(md, /Checking now/);
+  assert.match(md, /Vercel metrics found/);
+  assert.match(md, /Only checked if you expand this run \(1\)/);
   assert.match(md, /Slow route on \/a - function invocations: 10,000; 95th percentile duration: 900ms/);
   assert.match(md, /Low cache-hit route on \/b - requests: 5,000; cache hit rate: 0%/);
   assert.match(md, /Options/);
@@ -151,7 +151,7 @@ test('buildBudgetSummary: questionText is one short sentence', () => {
     toLaunch: Array.from({ length: 6 }, (_, i) => ({ kind: 'slow_route', route: `/a${i}`, priority: 100 - i })),
     gated: Array.from({ length: 4 }, (_, i) => ({ kind: 'slow_route', route: `/b${i}`, gatedReason: 'skippedByBudget (...)', priority: 10 - i })),
   }));
-  assert.equal(s.questionText, 'Keep the default 6, investigate all 10, or pick a specific number?');
+  assert.equal(s.questionText, 'How many potential issues should I check in this run?');
   // Must fit cleanly into a single question field.
   assert.ok(!s.questionText.includes('\n'));
 });
@@ -182,13 +182,18 @@ test('buildBudgetSummary: budget preview avoids internal shorthand while raw can
   assert.doesNotMatch(s.chatPreview, /top \d+ by priority/i);
   assert.doesNotMatch(s.chatPreview, /high-priority candidates/i);
   assert.doesNotMatch(s.chatPreview, /sub-agent invocations/i);
+  assert.doesNotMatch(s.chatPreview, /budget checkpoint/i);
+  assert.doesNotMatch(s.chatPreview, /first-pass signals/i);
+  assert.doesNotMatch(s.chatPreview, /follow-up metrics/i);
+  assert.doesNotMatch(s.chatPreview, /investigation threshold/i);
+  assert.doesNotMatch(JSON.stringify(s.questionPayload), /budget checkpoint|follow-up metrics|investigation threshold|candidate/i);
   assert.doesNotMatch(s.chatPreview, /\d+-\d+×/);
   assert.doesNotMatch(s.options.map((o) => o.rationale).join('\n'), /\d+-\d+×/);
-  assert.match(s.chatPreview, /coverage across issue types/);
-  assert.match(s.chatPreview, /Follow-up metrics can still remove mismatches/);
+  assert.match(s.chatPreview, /Vercel metrics found 2 potential issues worth checking/);
+  assert.match(s.chatPreview, /More checks take longer and may still end with no code change recommended/);
   assert.match(s.options[0].label, /default/);
-  assert.match(s.options[0].rationale, /strongest signals/);
-  assert.match(s.options[1].rationale, /follow-up metrics can still remove mismatches/);
+  assert.match(s.options[0].rationale, /fastest first pass/);
+  assert.match(s.options[1].rationale, /most complete/);
 });
 
 test('buildBudgetSummary: chatPreview renders every budget-skipped candidate', () => {
@@ -202,7 +207,7 @@ test('buildBudgetSummary: chatPreview renders every budget-skipped candidate', (
       o11ySignal: `inv=${1000 + i}`,
     })),
   }));
-  assert.match(s.chatPreview, /Skipped by budget \(all 12; next highest-priority candidates\):/);
+  assert.match(s.chatPreview, /Only checked if you expand this run \(12\):/);
   assert.match(s.chatPreview, /12\. Slow route on \/skipped-11 - function invocations: 1,011/);
   assert.doesNotMatch(s.chatPreview, /more in gated list/);
 });
@@ -217,7 +222,7 @@ test('buildBudgetSummary: default preview shows all launched candidates when the
       gatedReason: 'skippedByBudget (...)',
     }],
   }));
-  assert.match(s.chatPreview, /Investigating by default:/);
+  assert.match(s.chatPreview, /Checking now:/);
   assert.match(s.chatPreview, /6\. Slow route on \/launched-5/);
   assert.doesNotMatch(s.chatPreview, /5 shown|top 5 shown/i);
 });
