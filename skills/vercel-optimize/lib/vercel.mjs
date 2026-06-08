@@ -2,18 +2,39 @@
 
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
+import { existsSync } from 'node:fs';
 import { readFile, access } from 'node:fs/promises';
-import { join } from 'node:path';
+import { delimiter, join } from 'node:path';
 import { getMetricThrottle, isDailyQuotaExceeded, retryOnRateLimit } from './throttle.mjs';
 
 const exec = promisify(execFile);
+
+// On Windows, execFile cannot run the `vercel.cmd` shim directly: PATHEXT is not
+// applied by execFile, and .cmd/.bat require `shell: true` since Node 20 — but a
+// shell would mangle args containing spaces or URL query strings (e.g.
+// `vercel api '/v9/projects/:id?teamId=:org'`, `-f 'http_status ge 500'`). So we
+// resolve the Vercel package's JS entry from PATH and run it via `node` directly:
+// no shell, every arg passed verbatim. POSIX is unchanged (`vercel` on PATH).
+function resolveVercelCommand() {
+  if (process.platform !== 'win32') return { file: 'vercel', prefix: [] };
+  for (const dir of (process.env.PATH || '').split(delimiter).filter(Boolean)) {
+    for (const rel of ['node_modules/vercel/dist/vc.js', 'node_modules/vercel/dist/index.js']) {
+      const entry = join(dir, rel);
+      if (existsSync(entry)) return { file: process.execPath, prefix: [entry] };
+    }
+  }
+  return { file: 'vercel', prefix: [] }; // fall back to bare PATH resolution
+}
+const VERCEL = resolveVercelCommand();
+const runVercel = (args, opts) => exec(VERCEL.file, [...VERCEL.prefix, ...args], opts);
+
 const MIN_CLI_VERSION = [53, 0, 0];
 
 // Pre-v53 lacks `vercel metrics` and `vercel contract`.
 export async function checkCliVersion() {
   let raw;
   try {
-    const { stdout } = await exec('vercel', ['--version']);
+    const { stdout } = await runVercel(['--version']);
     raw = stdout.trim();
   } catch (err) {
     throw new Error('VERCEL_NOT_INSTALLED: `vercel` CLI not found in PATH. Install with `npm i -g vercel@latest`.');
@@ -34,7 +55,7 @@ export async function checkCliVersion() {
 
 export async function checkAuth() {
   try {
-    await exec('vercel', ['whoami']);
+    await runVercel(['whoami']);
   } catch {
     throw new Error('NOT_AUTH: run `vercel login`.');
   }
@@ -232,7 +253,7 @@ export async function runVercelJson(args, opts = {}) {
   let stderr = '';
   let exitCode = 0;
   try {
-    const r = await exec('vercel', args, { maxBuffer: 32 * 1024 * 1024, ...opts });
+    const r = await runVercel(args, { maxBuffer: 32 * 1024 * 1024, ...opts });
     stdout = r.stdout;
     stderr = r.stderr;
   } catch (err) {
