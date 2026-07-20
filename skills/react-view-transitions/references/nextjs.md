@@ -169,31 +169,6 @@ When navigating between dynamic segments of the same route (e.g., `/collection/[
 
 ---
 
-## Shared Elements Across a Suspense Boundary
-
-A cross-navigation morph needs the target named element present at the navigation snapshot. If the destination `<ViewTransition name>` sits **inside** a `<Suspense>` awaiting a fetch, only the skeleton is in the shell at snapshot time — no pair forms, so nothing morphs. A placement issue, not a limitation.
-
-**It morphs fine when the target is in the shell / cached.** Put the named element in `layout.tsx` keyed only by `params` (fast), and stream the slow data inside:
-
-```tsx
-// app/thing/[slug]/layout.tsx
-export default async function Layout({ children, params }: {
-  children: React.ReactNode;
-  params: Promise<{ slug: string }>;
-}) {
-  const { slug } = await params;
-  return (
-    <ViewTransition name={`thing-${slug}`} share="morph" default="none">
-      <article>{children}</article>
-    </ViewTransition>
-  );
-}
-```
-
-For a *visual* target (album art, product image), back it with a fast, cached, param-only query (e.g. just the cover color) and keep the heavy fetch behind the inner `<Suspense>`.
-
-**Instant routes:** reading `params` in the shell can trip *"params accessed outside `<Suspense>`"* on instant-prerenderable routes. Keep the shell read param-only and cached, or opt that route out of instant.
-
 ## Nested enter/exit — `parentEnter` / `parentExit` (experimental)
 
 Lifts the "nested VTs don't fire enter/exit inside a parent" rule: a nested VT can animate when its **parent** enters/exits (`parentEnter`/`parentExit`, `onParentEnter`/`onParentExit`; `parentEnter="none"` stops propagation). Client-only today (behind `enableViewTransitionParentEnterExit`); SSR support for Suspense reveals landed in React PR #36917 ([commit](https://github.com/react/react/commit/83840902c890f0eb85decda239ef6b1b14945779)). Verify it's in your React (`grep -r "vt-parent-enter" node_modules/next/dist/compiled/react*`) before relying on it.
