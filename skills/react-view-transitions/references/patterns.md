@@ -159,6 +159,8 @@ export function Tabs({ tabs, indicatorName = 'tab-indicator' }) {
 }
 ```
 
+Because the state change is a transition, if the newly-active tab renders suspending content the whole update — indicator **and** `aria-current` — waits for it to commit, and the strip feels dead on click. Give the controls an immediate value with `useOptimistic` (drive `aria-current` from it) so feedback is instant while the content streams. The routing variant (`nextjs.md` → Routing-Driven Tabs) does exactly this: optimistic `aria-current`, committed `active` for the bar.
+
 ## Reusable Animated Collapse
 
 ```jsx
