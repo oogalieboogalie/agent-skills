@@ -114,9 +114,13 @@ Use `key` when content identity changes (state resets). Omit for cross-fades (ta
 
 ## Isolate Elements from Parent Animations
 
+The only way to pull an element out of the browser's animated `root` snapshot is to give it **its own `view-transition-name`**. There is no "exclude from root" primitive.
+
+> **`view-transition-name: none` does NOT isolate anything.** `none` is the CSS *default* — setting it explicitly is a no-op, and the element stays part of the `root` capture. This is a common bug (e.g. a popover with `style={{ viewTransitionName: 'none' }}` still flickers). Isolation always requires a **real, unique name** plus CSS that neutralizes its animation.
+
 ### Persistent Layout Elements
 
-Persistent elements (headers, navbars, sidebars) get captured in the page's transition snapshot. Fix with `viewTransitionName`:
+Persistent elements (headers, navbars, sidebars) get captured in the page's transition snapshot. Fix with a real `viewTransitionName`:
 
 ```jsx
 <nav style={{ viewTransitionName: "persistent-nav" }}>{/* ... */}</nav>
@@ -124,15 +128,23 @@ Persistent elements (headers, navbars, sidebars) get captured in the page's tran
 
 Then add the persistent element isolation CSS from `css-recipes.md`. For `backdrop-blur`/`backdrop-filter`, use the backdrop-blur workaround from `css-recipes.md`.
 
-### Floating Elements
+**`<ViewTransition default="none">` vs. a hand-named group.** Wrapping the element in `<ViewTransition default="none">` also lifts it out of `root` and disables its animation, with *no* CSS — prefer it when animation-off is all you need. But React assigns that boundary an **auto-generated** name you can't target from CSS, so you **cannot** add `z-index` layering or the backdrop-blur `::view-transition-old(...) { display: none }` workaround to it. When you need those (e.g. sticky chrome that must stay above transitioning content, or a blurred sidebar), keep the **hand-named** `viewTransitionName` + explicit CSS. This is inherent, not boilerplate you can delete.
 
-Give popovers/tooltips their own `viewTransitionName`:
+### Floating Elements (popovers, menus, tooltips)
+
+A floating element left **open** while a background transition runs is captured in the `root` snapshot and **flickers as the transition settles**. Give it a real `viewTransitionName` and isolate it:
 
 ```jsx
-<SelectPopover style={{ viewTransitionName: 'popover' }}>{options}</SelectPopover>
+<SelectPopover style={{ viewTransitionName: 'select-popover' }}>{options}</SelectPopover>
 ```
 
-Global fix: see persistent element isolation in `css-recipes.md`.
+```css
+::view-transition-group(select-popover) { animation: none; z-index: 100; }
+::view-transition-old(select-popover),
+::view-transition-new(select-popover) { animation: none; }
+```
+
+A static name is safe as long as only one instance is mounted at a time (e.g. the menu uses `unmountOnHide`). If genuinely rendered in the browser **top layer** (native `popover`/`<dialog>`), the settle re-composite is a browser limitation React can't reach — but most portaled popovers are ordinary divs and the real-name fix resolves the flicker.
 
 ## Shared Controls Between Skeleton and Content
 
@@ -238,6 +250,10 @@ The `types` array (second argument) lets you vary animation based on transition 
 **VT not activating:** Ensure `<ViewTransition>` comes before any DOM node. Ensure state update is inside `startTransition`.
 
 **"Two ViewTransition components with the same name":** Names must be globally unique. Use IDs: `name={`hero-${item.id}`}`.
+
+**Scrolling hangs / feels stuck while a transition animates (esp. a Suspense reveal):** the browser's `::view-transition` overlay is `position: fixed` over the viewport, and the old/new snapshots don't scroll with the page — so scrolling appears frozen until the animation settles. This is a **browser/CSS View Transitions limitation**, not something React can hide (skipping the transition on scroll snaps abruptly to the end). Mitigate by keeping reveal durations short (200–400ms). For genuinely scroll-driven UI, use **gesture transitions** (`useSwipeTransition` / `startGestureTransition`) — those are scrubbed by scroll position so scrolling *drives* the transition instead of fighting it.
+
+**Open popover/menu flickers when a background transition settles:** the floating element is captured in the `root` snapshot. Give it a real `view-transition-name` + isolation CSS — see "Floating Elements" above. (`viewTransitionName: 'none'` does not fix it — that's the CSS default.)
 
 **`router.back()` and browser back/forward skip animation:** Use `router.push()` with an explicit URL instead. See SKILL.md "router.back() and Browser Back Button."
 
