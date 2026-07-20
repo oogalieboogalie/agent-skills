@@ -176,7 +176,7 @@ A shared-element morph needs **both** the source *and* the target named element 
 **Fix: hoist the shared element into the shell, fed only by fast/cached data; stream the slow data inside it.** Put the named element in the route's `layout.tsx` (or above the data `<Suspense>`), keyed only by `params`:
 
 ```tsx
-// app/thing/[slug]/layout.tsx — awaits ONLY params (no slow query)
+// app/thing/[slug]/layout.tsx
 export default async function Layout({ children, params }: LayoutProps<'/thing/[slug]'>) {
   const { slug } = await params;
   return (

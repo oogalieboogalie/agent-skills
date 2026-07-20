@@ -138,11 +138,7 @@ A floating element left **open** while a background transition runs is captured 
 <SelectPopover style={{ viewTransitionName: 'select-popover' }}>{options}</SelectPopover>
 ```
 
-```css
-::view-transition-group(select-popover) { animation: none; z-index: 100; }
-::view-transition-old(select-popover),
-::view-transition-new(select-popover) { animation: none; }
-```
+Then freeze it — see "Floating Element Isolation" in `css-recipes.md`.
 
 A static name is safe as long as only one instance is mounted at a time (e.g. the menu uses `unmountOnHide`). If genuinely rendered in the browser **top layer** (native `popover`/`<dialog>`), the settle re-composite is a browser limitation React can't reach — but most portaled popovers are ordinary divs and the real-name fix resolves the flicker.
 
@@ -159,15 +155,9 @@ A static name is safe as long as only one instance is mounted at a time (e.g. th
 <input placeholder="Search..." style={{ viewTransitionName: 'search-input' }} />
 ```
 
-```css
-/* the group interpolates position + size = a smooth morph */
-::view-transition-group(search-input) { animation-duration: 220ms; }
-/* no cross-fade of the two snapshots = no ghost/flicker */
-::view-transition-old(search-input),
-::view-transition-new(search-input) { animation: none; }
-```
+Then morph it — see "Skeleton ↔ Content Morph (group-only)" in `css-recipes.md`.
 
-So yes — you *can* "morph the fallback too": the fallback element and the content element sharing one name is what makes the fallback shape animate into the content shape instead of flickering. Blanket-avoiding it ("never put the same element in both") works but forfeits the nicest reveal; the shared-name + group-only morph is the better default.
+So yes — you *can* morph the fallback shape into the content shape: sharing one name across both is what makes it morph instead of flicker. **It only actually morphs when the content is present within the same reveal transition** — i.e. the data is cached/prefetched so the resolved element renders in the same transition that removes the fallback. On a cold/uncached fetch there is no content element yet at the reveal, so nothing pairs with the fallback: you sit on the skeleton and the content enters later as a *separate* transition (a plain enter, no morph). Blanket-avoiding it ("never put the same element in both") works but forfeits the nicest reveal.
 
 Don't put manual `viewTransitionName` on the root DOM node inside `<ViewTransition>` — React's auto-generated name overrides it.
 
@@ -185,7 +175,7 @@ export function Tabs({ tabs, active, indicatorName = 'tab-indicator' }) {
   return (
     <nav>
       {tabs.map(t => {
-        const isCommitted = active === t.value;              // where the bar actually is
+        const isCommitted = active === t.value;
         return (
           <Link key={t.value} href={t.href} scroll={false}
             aria-current={optimisticActive === t.value ? 'page' : undefined}
@@ -204,17 +194,7 @@ export function Tabs({ tabs, active, indicatorName = 'tab-indicator' }) {
 }
 ```
 
-```css
-::view-transition-group(.tab-underline) {
-  animation-duration: 220ms;
-  animation-timing-function: cubic-bezier(0.5, 0, 0.2, 1);
-}
-::view-transition-old(.tab-underline),
-::view-transition-new(.tab-underline) {
-  animation: none;   /* don't fade the two bars — just let the group slide */
-  height: 100%;      /* both snapshots fill so it reads as one solid moving bar */
-}
-```
+See "Sliding Indicator" in `css-recipes.md` for the `share="tab-underline"` CSS.
 
 Key details: the indicator is keyed to the **committed** `active` (so the bar sits where navigation actually landed), while `useOptimistic` drives the *label* state instantly; give each mount point a distinct `indicatorName` so two tab strips on one page don't fight over one name.
 
