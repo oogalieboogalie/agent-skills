@@ -2,7 +2,7 @@
 
 ## Setup
 
-`<ViewTransition>` works out of the box for `startTransition`/`Suspense` updates. To also animate `<Link>` navigations:
+`<ViewTransition>` works out of the box — the bundled React canary ships it, and every `<Link>` navigation already runs inside `React.startTransition`, so react-dom starts a view transition whenever affected `<ViewTransition>` components exist. The documented flag:
 
 ```js
 // next.config.js
@@ -12,7 +12,7 @@ const nextConfig = {
 module.exports = nextConfig;
 ```
 
-This wraps every `<Link>` navigation in `document.startViewTransition`. Any VT with `default="auto"` fires on **every** link click — use `default="none"` to prevent competing animations.
+Historically this switched the bundled React to the experimental channel; in current Next.js (16.2+) it gates nothing at runtime, but set it anyway to match the documented setup. Because every link click is a transition, any VT with `default="auto"` fires on **every** navigation — use `default="none"` to prevent competing animations.
 
 Do **not** install `react@canary` — see SKILL.md "Availability" for details.
 
@@ -50,7 +50,7 @@ No wrapper component needed, works in Server Components:
 
 Replaces the manual pattern of `onNavigate` + `startTransition` + `addTransitionType` + `router.push()`. Reserve manual `startTransition` for non-link interactions (buttons, forms).
 
-**Availability:** `transitionTypes` requires `experimental.viewTransition: true` and is available in Next.js 15+ canary builds and Next.js 16+. If unavailable, use `startTransition` + `addTransitionType` + `router.push()` (see Programmatic Navigation below). To check: `grep -r "transitionTypes" node_modules/next/dist/` — if no results, fall back to programmatic navigation.
+**Availability:** `transitionTypes` shipped in **Next.js 16.2.0** (it is not gated on the `experimental.viewTransition` flag). If unavailable, use `startTransition` + `addTransitionType` + `router.push()` (see Programmatic Navigation below). To check: `grep -r "transitionTypes" node_modules/next/dist/` — if no results, fall back to programmatic navigation.
 
 ---
 
@@ -62,12 +62,17 @@ Replaces the manual pattern of `onNavigate` + `startTransition` + `addTransition
 import { useRouter } from 'next/navigation';
 import { startTransition, addTransitionType } from 'react';
 
-function handleNavigate(href: string) {
+function DetailButton({ href }: { href: string }) {
   const router = useRouter();
-  startTransition(() => {
-    addTransitionType('nav-forward');
-    router.push(href);
-  });
+
+  function handleNavigate() {
+    startTransition(() => {
+      addTransitionType('nav-forward');
+      router.push(href);
+    });
+  }
+
+  return <button onClick={handleNavigate}>Open</button>;
 }
 ```
 
@@ -188,7 +193,7 @@ If the pair's `share` is type-keyed (or classed via CSS that expects a type), ev
 
 ## Same-Route Dynamic Segment Transitions
 
-When navigating between dynamic segments of the same route (e.g., `/collection/[slug]`), the page stays mounted — enter/exit never fire. Use `key` + `name` + `share`:
+When navigating between dynamic segments of the same route (e.g., `/collection/[slug]`), the router swaps subtrees keyed by the segment value (or re-shows Activity-cached ones) rather than doing a plain unmount/mount — so enter/exit don't fire reliably. Use `key` + `name` + `share`:
 
 ```tsx
 <Suspense fallback={<Skeleton />}>
@@ -206,7 +211,7 @@ When navigating between dynamic segments of the same route (e.g., `/collection/[
 
 ## Nested enter/exit — `parentEnter` / `parentExit` (experimental)
 
-Lifts the "nested VTs don't fire enter/exit inside a parent" rule: a nested VT can animate when its **parent** enters/exits (`parentEnter`/`parentExit`, `onParentEnter`/`onParentExit`; `parentEnter="none"` stops propagation). Client-only today (behind `enableViewTransitionParentEnterExit`); SSR support for Suspense reveals landed in React PR #36917 ([commit](https://github.com/react/react/commit/83840902c890f0eb85decda239ef6b1b14945779)). Verify it's in your React (`grep -r "vt-parent-enter" node_modules/next/dist/compiled/react*`) before relying on it.
+Lifts the "nested VTs don't fire enter/exit inside a parent" rule: a nested VT can animate when its **parent** enters/exits (`parentEnter`/`parentExit`, `onParentEnter`/`onParentExit`; `parentEnter="none"` stops propagation). Experimental-channel only today (behind `enableViewTransitionParentEnterExit = __EXPERIMENTAL__`); SSR support for Suspense reveals landed in React PR #36917 ([commit](https://github.com/facebook/react/commit/83840902c890f0eb85decda239ef6b1b14945779)). Verify it's in the React your app actually runs: `grep -c "parentEnter" node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.production.js` — 0 means unavailable (Next only uses the experimental channel when flags like `blockingSSR`/`taint` are set).
 
 ## Server Components
 

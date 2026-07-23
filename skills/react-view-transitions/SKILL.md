@@ -44,7 +44,7 @@ Reserve directional slides for hierarchical navigation (list → detail) and ord
 
 - **Next.js:** Do **not** install `react@canary` — the App Router already bundles React canary internally. `ViewTransition` works out of the box. `npm ls react` may show a stable-looking version; this is expected.
 - **Without Next.js:** Install `react@canary react-dom@canary` (`ViewTransition` is not in stable React).
-- Browser support: Chromium 111+, Firefox 144+, Safari 18.2+. Graceful degradation on unsupported browsers.
+- Browser support: Chromium 125+, Firefox 144+, Safari 18.2+. React requires the v2 object form of `startViewTransition` and deliberately falls back to not animating on older engines (Chromium 111–124 only has the v1 callback form). Graceful degradation on unsupported browsers.
 
 ---
 
@@ -177,7 +177,7 @@ export function DirectionalTransition({ children }: { children: React.ReactNode 
 
 ### `router.back()` and Browser Back Button
 
-`router.back()` and the browser's back/forward buttons do **not** trigger view transitions (`popstate` is synchronous, incompatible with `startViewTransition`). Use `router.push()` with an explicit URL instead.
+`router.back()` and the browser's back/forward buttons do **not** animate: React renders transitions scheduled during a `popstate` event synchronously (`shouldAttemptEagerTransition`) to keep back/forward instant, and synchronous renders skip view transitions. Traversals also carry no transition types, so type-keyed maps resolve to their `default`. Use `router.push()` with an explicit URL instead.
 
 ### Types and Suspense
 
@@ -299,7 +299,7 @@ They coexist because they fire at different moments. `default="none"` on both pr
 
 ### Nested VT Limitation
 
-When a parent VT exits, nested VTs inside it do **not** fire their own enter/exit — only the outermost VT animates. Per-item staggered animations during page navigation are not possible today. See [react#36135](https://github.com/facebook/react/pull/36135) for an experimental opt-in fix.
+When a parent VT mounts/unmounts **as one unit** with nested VTs inside it, the nested ones do not fire their own enter/exit — only the outermost VT animates. (A child VT mounted inside a *persistent* parent VT fires enter/exit normally.) Per-item staggered animations during page navigation are not possible today; the experimental opt-in is the `parentEnter`/`parentExit` props ([react#36690](https://github.com/facebook/react/pull/36690), experimental channel only).
 
 ---
 

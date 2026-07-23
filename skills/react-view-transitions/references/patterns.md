@@ -178,7 +178,7 @@ Only content inside an activated boundary animates position — everything else 
 
 The section — heading included — morphs as one group when rows above are added or removed. Nothing inside the section changed; the *displacement* is the update.
 
-- React only activates this for **immediate siblings** of the mutation (deliberate: page-wide re-layout would otherwise fire noisy animations everywhere). Place the boundary as a direct sibling of the changing content.
+- React activates VT boundaries that are direct children (not behind an intermediate DOM node) of nodes along the changed path — siblings of the mutation and of its ancestors qualify; a VT buried under an extra wrapper element in a sibling does not (deliberate: page-wide re-layout would otherwise fire noisy animations everywhere). Place the boundary as a direct sibling of the changing content.
 - `default="none"` disables exactly this morph — it turns off `update`. Named/shared elements get `default="none"`; displaced siblings and keyed list items stay bare or set `update="auto"`.
 
 ## Reusable Animated Collapse
@@ -238,7 +238,7 @@ function cycleSort() {
 
 ## View Transition Events
 
-Imperative control via `onEnter`, `onExit`, `onUpdate`, `onShare`. Always return a cleanup function. `onShare` takes precedence over `onEnter`/`onExit`.
+Imperative control via `onEnter`, `onExit`, `onUpdate`, `onShare`. Return a cleanup function to cancel your animation when the transition finishes. `onShare` takes precedence over `onEnter`/`onExit`.
 
 ```jsx
 <ViewTransition
@@ -287,13 +287,13 @@ The `types` array (second argument) lets you vary animation based on transition 
 
 **Section below a list teleports instead of gliding:** it's outside any activated boundary, its VT has `default="none"` (which disables `update`), or it isn't an immediate sibling of the changing content. See "Layout Displacement Morph" above.
 
-**`router.back()` and browser back/forward skip animation:** Use `router.push()` with an explicit URL instead. See SKILL.md "router.back() and Browser Back Button."
+**`router.back()` and browser back/forward skip animation:** React renders `popstate`-scheduled transitions synchronously (skipping view transitions), and traversals carry no transition types. Use `router.push()` with an explicit URL instead. See SKILL.md "router.back() and Browser Back Button."
 
 **`flushSync` skips animations:** Use `startTransition` instead.
 
 **Only updates animate (no enter/exit):** Without `<Suspense>`, React treats swaps as updates. Conditionally render the VT itself, or wrap in `<Suspense>`.
 
-**Layout VT prevents page VTs from animating:** Nested VTs never fire enter/exit inside a parent VT. If your layout has a VT wrapping `{children}`, page-level enter/exit will silently not work. Remove the layout VT.
+**Layout VT prevents page VTs from animating:** nested VTs don't fire their own enter/exit when they mount/unmount *as one unit* with a parent VT — only the outermost animates. (A child VT swapped inside a persistent parent fires normally; if page enter/exit is dead under a persistent layout VT, check the page VT isn't below a plain DOM node instead.) If your layout has a VT wrapping `{children}`, remove it and put VTs in pages.
 
 **List reorder not animating with `useOptimistic`:** Optimistic values resolve before snapshot. Use committed state for list order.
 
