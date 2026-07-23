@@ -74,7 +74,7 @@ React auto-assigns a unique `view-transition-name` and calls `document.startView
 |---------|--------------|
 | **enter** | `<ViewTransition>` first inserted during a Transition |
 | **exit** | `<ViewTransition>` first removed during a Transition |
-| **update** | DOM mutations inside a `<ViewTransition>`, or the boundary itself moving/resizing because content around it changed. With nested VTs, mutation applies to the innermost one |
+| **update** | DOM mutations inside a `<ViewTransition>`, or the boundary itself changing size/position due to an immediate sibling. With nested VTs, mutation applies to the innermost one |
 | **share** | Named VT unmounts and another with same `name` mounts in the same Transition |
 
 Only `startTransition`, `useDeferredValue`, or `Suspense` activate VTs. Regular `setState` does not animate.
@@ -229,19 +229,7 @@ Trigger inside `startTransition`. Avoid wrapper `<div>`s between list and VT.
 
 ### Layout Displacement Morph
 
-Only content inside an activated boundary animates position — everything else teleports to its new layout spot. When a list grows/shrinks, wrap the *sibling* content below it so it glides instead of jumping:
-
-```jsx
-<FavoritesList />              {/* rows enter/exit */}
-<ViewTransition>               {/* bare: update enabled */}
-  <section>
-    <h2>You Might Also Like</h2>
-    <Recommendations />
-  </section>
-</ViewTransition>
-```
-
-The section — heading included — morphs as one group when rows above are added or removed. `default="none"` disables exactly this: nothing inside the section changed, so the *displacement* is the update.
+Only content inside an activated boundary animates position — everything else teleports to its new layout spot. Wrap the sibling content below a growing/shrinking list in a bare `<ViewTransition>` so it glides instead of jumping. See `references/patterns.md` → Layout Displacement Morph.
 
 ### Composing Shared Elements with List Identity
 

@@ -162,6 +162,25 @@ export function Tabs({ tabs, indicatorName = 'tab-indicator' }) {
 
 Because the state change is a transition, if the newly-active tab renders suspending content the whole update — indicator **and** `aria-current` — waits for it to commit, and the strip feels dead on click. Give the controls an immediate value with `useOptimistic` (drive `aria-current` from it) so feedback is instant while the content streams. The routing variant (`nextjs.md` → Routing-Driven Tabs) does exactly this: optimistic `aria-current`, committed `active` for the bar.
 
+## Layout Displacement Morph
+
+Only content inside an activated boundary animates position — everything else teleports to its new layout spot. When a list grows or shrinks, wrap the sibling content below it so it glides instead of jumping:
+
+```jsx
+<FavoritesList />              {/* rows enter/exit */}
+<ViewTransition>               {/* bare: update enabled */}
+  <section>
+    <h2>You Might Also Like</h2>
+    <Recommendations />
+  </section>
+</ViewTransition>
+```
+
+The section — heading included — morphs as one group when rows above are added or removed. Nothing inside the section changed; the *displacement* is the update.
+
+- React only activates this for **immediate siblings** of the mutation (deliberate: page-wide re-layout would otherwise fire noisy animations everywhere). Place the boundary as a direct sibling of the changing content.
+- `default="none"` disables exactly this morph — it turns off `update`. Named/shared elements get `default="none"`; displaced siblings and keyed list items stay bare or set `update="auto"`.
+
 ## Reusable Animated Collapse
 
 ```jsx
@@ -266,7 +285,7 @@ The `types` array (second argument) lets you vary animation based on transition 
 
 **Shared morph silently not firing:** `share` resolved to `none`. Either the VT has `default="none"` with no explicit `share` prop, or `share` is type-keyed and the navigation never adds the type — the link needs `transitionTypes` (or `addTransitionType` in the transition).
 
-**Section below a list teleports instead of gliding:** it's outside any activated boundary, or its VT has `default="none"` (which disables `update`). Wrap the section in a bare `<ViewTransition>` — see SKILL.md → Layout Displacement Morph.
+**Section below a list teleports instead of gliding:** it's outside any activated boundary, its VT has `default="none"` (which disables `update`), or it isn't an immediate sibling of the changing content. See "Layout Displacement Morph" above.
 
 **`router.back()` and browser back/forward skip animation:** Use `router.push()` with an explicit URL instead. See SKILL.md "router.back() and Browser Back Button."
 
