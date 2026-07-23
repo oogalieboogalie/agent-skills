@@ -233,6 +233,8 @@ The root cross-fades on every transition, freezing unnamed content behind a stal
 
 Named and classed groups still animate — they stack above root. Trade-off: unnamed content swaps instantly, so regions that should fade need their own VT. This also removes the main reason to hand-name static chrome; keep names only for elements that must stack above animating groups.
 
+Pairs well with enter-only reveals: skip the fallback-exit VT entirely (`<ViewTransition enter="auto" default="none">` around the content, nothing on the skeleton) — the skeleton snaps out live while the content fades in.
+
 ---
 
 ## Persistent Element Isolation
